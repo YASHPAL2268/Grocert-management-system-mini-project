@@ -1,7 +1,7 @@
 #-----------------GROCERY MANAGEMENT SYSTEM--------------------
 items = []
 while True:
-    display = input('Press enter to continue.')
+    display = input('Press Enter to Move Forward.')
     print('------------------Welcome to the Grocery Store------------------')
     print('1. View items\n2. Add items for sale\n3. Purchase items\n4. Search items \n5. Edit items\n6. Exit')
     choice = input('Enter the number of your choice : ')
