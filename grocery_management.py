@@ -74,7 +74,7 @@ while True:
         item_name = input('Enter the name of the item that you want to edit : ')
         for item in items:
             if item_name.lower() == item['name'].lower():
-                print('Here are the current details of ' + item_name)
+                print('Here are the current details of the ' + item_name)
                 print(item)
                 item['name'] = input('Item name : ')
                 while True:
