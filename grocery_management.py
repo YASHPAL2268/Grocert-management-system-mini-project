@@ -148,7 +148,7 @@ while True:
     elif choice == '9':
         print('------------------ Sort Items ------------------')
         print("1. Sort by Name\n2. Sort by Price")
-        sort_choice = input("Enter choice: ")
+        sort_choice = input("Enter choice No: ")
         if sort_choice == '1':
             sorted_items = sorted(items, key=lambda x: x['name'].lower())
         elif sort_choice == '2':
