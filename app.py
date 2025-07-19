@@ -25,8 +25,16 @@ load_items()
 while True:
     input('Press Enter to continue...')
     print('\n------------------ Welcome to the Grocery Store ------------------')
-    print('1. View items\n2. Add items\n3. Purchase items\n4. Search items')
-    print('5. Edit items\n6. Exit\n7. Save Inventory\n8. Delete Item\n9. Sort Items')
+    print('1. View items')
+    print('2. Add items')
+    print('3. Purchase items')
+    print('4. Search items')
+    print('5. Edit items')
+    print('6. Exit')
+    print('7. Save Inventory')
+    print('8. Delete Item')
+    print('9. Sort Items')
+    print('10. Inventory Summary')
     choice = input('Enter the number of your choice: ')
 
     if choice == '1':
@@ -158,6 +166,16 @@ while True:
             continue
         for item in sorted_items:
             print(item)
+
+    elif choice == '10':
+        print('------------------ Inventory Summary ------------------')
+        total_items = len(items)
+        total_quantity = sum(item['quantity'] for item in items)
+        total_value = sum(item['quantity'] * item['price'] for item in items)
+        
+        print(f"📦 Total different items: {total_items}")
+        print(f"📦 Total quantity of all items: {total_quantity}")
+        print(f"💰 Total inventory value: ₹{total_value}")
 
     else:
         print('❌ Invalid option. Please choose a valid menu number.')
