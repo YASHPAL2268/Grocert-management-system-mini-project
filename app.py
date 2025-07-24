@@ -1,181 +1,140 @@
+import tkinter as tk
+from tkinter import messagebox, ttk
 import json
+import csv
 
-# ----------------- GROCERY MANAGEMENT SYSTEM --------------------
 items = []
 
-# Load inventory from file at start
+# Load inventory from JSON
 def load_items():
     global items
     try:
-        with open("inventory.json", "r") as file:
-            items = json.load(file)
-        print("✅ Inventory loaded successfully.")
+        with open("inventory.json", "r") as f:
+            items.clear()
+            items.extend(json.load(f))
+        refresh_table()
+        messagebox.showinfo("Success", "✅ Inventory loaded.")
     except FileNotFoundError:
-        items = []
+        items.clear()
+        messagebox.showwarning("Not Found", "No saved inventory found.")
 
-# Save inventory to file
+# Save inventory to JSON
 def save_items():
-    with open("inventory.json", "w") as file:
-        json.dump(items, file)
-    print("💾 Inventory saved successfully.")
+    with open("inventory.json", "w") as f:
+        json.dump(items, f)
+    messagebox.showinfo("Saved", "💾 Inventory saved successfully.")
 
-# Start of program
+# Export to CSV
+def export_csv():
+    with open("inventory_export.csv", "w", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=["name", "quantity", "price"])
+        writer.writeheader()
+        writer.writerows(items)
+    messagebox.showinfo("Exported", "📤 Inventory exported to CSV.")
+
+# Add Item
+def add_item():
+    name = entry_name.get()
+    try:
+        quantity = int(entry_quantity.get())
+        price = int(entry_price.get())
+    except ValueError:
+        messagebox.showerror("Invalid Input", "Quantity and Price must be numbers.")
+        return
+
+    if not name:
+        messagebox.showerror("Missing Info", "Item name is required.")
+        return
+
+    items.append({"name": name, "quantity": quantity, "price": price})
+    refresh_table()
+    entry_name.delete(0, tk.END)
+    entry_quantity.delete(0, tk.END)
+    entry_price.delete(0, tk.END)
+    messagebox.showinfo("Added", f"✅ '{name}' added.")
+
+# Delete selected item
+def delete_item():
+    selected = table.selection()
+    if not selected:
+        messagebox.showwarning("No Selection", "Select an item to delete.")
+        return
+    idx = int(selected[0])
+    item = items[idx]
+    del items[idx]
+    refresh_table()
+    messagebox.showinfo("Deleted", f"🗑️ '{item['name']}' removed.")
+
+# Restock low items
+def restock_items():
+    for item in items:
+        if item['quantity'] < 3:
+            item['quantity'] += 5
+    refresh_table()
+    messagebox.showinfo("Restocked", "🔄 Low-stock items restocked by +5.")
+
+# Inventory summary
+def show_summary():
+    total_items = len(items)
+    total_quantity = sum(i["quantity"] for i in items)
+    total_value = sum(i["quantity"] * i["price"] for i in items)
+    summary = f"📦 Items: {total_items}\n📦 Quantity: {total_quantity}\n💰 Value: ₹{total_value}"
+    messagebox.showinfo("Inventory Summary", summary)
+
+# Refresh Treeview table
+def refresh_table():
+    for row in table.get_children():
+        table.delete(row)
+    for index, item in enumerate(items):
+        tag = "low" if item['quantity'] < 3 else ""
+        table.insert('', 'end', iid=index, values=(item['name'], item['quantity'], item['price']), tags=(tag,))
+    table.tag_configure("low", background="salmon")
+
+# Tkinter GUI setup
+root = tk.Tk()
+root.title("🛒 Grocery Management System")
+root.geometry("700x500")
+root.resizable(False, False)
+
+# Input fields
+frame_top = tk.Frame(root)
+frame_top.pack(pady=10)
+
+tk.Label(frame_top, text="Name").grid(row=0, column=0, padx=5)
+entry_name = tk.Entry(frame_top)
+entry_name.grid(row=0, column=1, padx=5)
+
+tk.Label(frame_top, text="Quantity").grid(row=0, column=2, padx=5)
+entry_quantity = tk.Entry(frame_top)
+entry_quantity.grid(row=0, column=3, padx=5)
+
+tk.Label(frame_top, text="Price ₹").grid(row=0, column=4, padx=5)
+entry_price = tk.Entry(frame_top)
+entry_price.grid(row=0, column=5, padx=5)
+
+tk.Button(frame_top, text="➕ Add Item", command=add_item, bg="green", fg="white").grid(row=0, column=6, padx=10)
+
+# Table
+columns = ("Name", "Quantity", "Price ₹")
+table = ttk.Treeview(root, columns=columns, show="headings", height=15)
+for col in columns:
+    table.heading(col, text=col)
+    table.column(col, width=200 if col == "Name" else 100, anchor="center")
+table.pack(pady=10)
+
+# Buttons
+frame_bottom = tk.Frame(root)
+frame_bottom.pack(pady=10)
+
+tk.Button(frame_bottom, text="🗑️ Delete", command=delete_item).grid(row=0, column=0, padx=10)
+tk.Button(frame_bottom, text="💾 Save", command=save_items).grid(row=0, column=1, padx=10)
+tk.Button(frame_bottom, text="📂 Load", command=load_items).grid(row=0, column=2, padx=10)
+tk.Button(frame_bottom, text="📤 Export CSV", command=export_csv).grid(row=0, column=3, padx=10)
+tk.Button(frame_bottom, text="🔄 Restock Low", command=restock_items).grid(row=0, column=4, padx=10)
+tk.Button(frame_bottom, text="📊 Summary", command=show_summary).grid(row=0, column=5, padx=10)
+
+# Load inventory at startup
 load_items()
 
-while True:
-    input('Press Enter to continue...')
-    print('\n------------------ Welcome to the Grocery Store ------------------')
-    print('1. View items')
-    print('2. Add items')
-    print('3. Purchase items')
-    print('4. Search items')
-    print('5. Edit items')
-    print('6. Exit')
-    print('7. Save Inventory')
-    print('8. Delete Item')
-    print('9. Sort Items')
-    print('10. Inventory Summary')
-    choice = input('Enter the number of your choice: ')
-
-    if choice == '1':
-        print('------------------ View Items ------------------')
-        print('Total items in inventory:', len(items))
-        if items:
-            for item in items:
-                for key, value in item.items():
-                    print(f"{key} : {value}")
-                if item['quantity'] < 3:
-                    print(f"⚠️  Low stock warning for '{item['name']}' (Only {item['quantity']} left!)")
-                print('-' * 30)
-        else:
-            print("No items available in the inventory.")
-
-    elif choice == '2':
-        print('------------------ Add Items ------------------')
-        item = {}
-        item['name'] = input('Item name: ')
-        while True:
-            try:
-                item['quantity'] = int(input('Item quantity: '))
-                break
-            except ValueError:
-                print('Quantity should only be in digits')
-        while True:
-            try:
-                item['price'] = int(input('Price ₹: '))
-                break
-            except ValueError:
-                print('Price should only be in digits')
-        items.append(item)
-        print('✅ Item has been successfully added.')
-
-    elif choice == '3':
-        print('------------------ Purchase Items ------------------')
-        if not items:
-            print("No items available for purchase.")
-            continue
-        purchase_item = input('Enter the name of the item to purchase: ')
-        found = False
-        for item in items:
-            if purchase_item.lower() == item['name'].lower():
-                found = True
-                if item['quantity'] > 0:
-                    print('\n---------- Invoice ----------')
-                    print('Item:', item['name'])
-                    print('Price: ₹', item['price'])
-                    print('Quantity Purchased: 1')
-                    print('Total: ₹', item['price'])
-                    print('Thank you for shopping!')
-                    print('-----------------------------\n')
-                    item['quantity'] -= 1
-                    if item['quantity'] < 3:
-                        print(f"⚠️  Low stock: Only {item['quantity']} left.")
-                else:
-                    print('❌ Item out of stock.')
-                break
-        if not found:
-            print("Item not found.")
-
-    elif choice == '4':
-        print('------------------ Search Items ------------------')
-        find_item = input("Enter the item name to search: ")
-        found = False
-        for item in items:
-            if item['name'].lower() == find_item.lower():
-                print('✅ Item found:')
-                print(item)
-                found = True
-                break
-        if not found:
-            print('Item not found.')
-
-    elif choice == '5':
-        print('------------------ Edit Items ------------------')
-        item_name = input('Enter the name of the item to edit: ')
-        found = False
-        for item in items:
-            if item_name.lower() == item['name'].lower():
-                found = True
-                print('Current details:', item)
-                item['name'] = input('New item name: ')
-                while True:
-                    try:
-                        item['quantity'] = int(input('New item quantity: '))
-                        break
-                    except ValueError:
-                        print('Quantity should only be in digits')
-                while True:
-                    try:
-                        item['price'] = int(input('New price ₹: '))
-                        break
-                    except ValueError:
-                        print('Price should only be in digits')
-                print('✅ Item updated successfully.')
-                break
-        if not found:
-            print('Item not found.')
-
-    elif choice == '6':
-        print('------------------ Exited ------------------')
-        break
-
-    elif choice == '7':
-        save_items()
-
-    elif choice == '8':
-        print('------------------ Delete Item ------------------')
-        del_name = input('Enter the name of the item to delete: ')
-        for item in items:
-            if item['name'].lower() == del_name.lower():
-                items.remove(item)
-                print(f"✅ '{del_name}' has been removed from inventory.")
-                break
-        else:
-            print("Item not found.")
-
-    elif choice == '9':
-        print('------------------ Sort Items ------------------')
-        print("1. Sort by Name\n2. Sort by Price")
-        sort_choice = input("Enter choice No: ")
-        if sort_choice == '1':
-            sorted_items = sorted(items, key=lambda x: x['name'].lower())
-        elif sort_choice == '2':
-            sorted_items = sorted(items, key=lambda x: x['price'])
-        else:
-            print("Invalid sort choice.")
-            continue
-        for item in sorted_items:
-            print(item)
-
-    elif choice == '10':
-        print('------------------ Inventory Summary ------------------')
-        total_items = len(items)
-        total_quantity = sum(item['quantity'] for item in items)
-        total_value = sum(item['quantity'] * item['price'] for item in items)
-        
-        print(f"📦 Total different items: {total_items}")
-        print(f"📦 Total quantity of all items: {total_quantity}")
-        print(f"💰 Total inventory value: ₹{total_value}")
-
-    else:
-        print('❌ Invalid option. Please choose a valid menu number.')
+# Run GUI
+root.mainloop()
